@@ -4,7 +4,13 @@
 package app
 
 import (
+	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/mattermost/mattermost-server/v5/mlog"
+	"github.com/mattermost/mattermost-server/v5/model"
+	"github.com/mattermost/mattermost-server/v5/store"
 )
 
 // CreateDefaultMemberships adds users to teams and channels based on their group memberships and how those groups are
@@ -116,6 +122,44 @@ func (a *App) DeleteGroupConstrainedMemberships() error {
 			mlog.String("user_id", userTeam.UserId),
 			mlog.String("team_id", userTeam.TeamId),
 		)
+	}
+
+	return nil
+}
+
+// SyncSyncableRoles updates the SchemeAdmin field value of the given syncable's members based on the configuration of
+// the member's group memberships and the configuration of those groups to the syncable.
+func (a *App) SyncSyncableRoles(syncableID string, syncableType model.GroupSyncableType) *model.AppError {
+	permittedAdmins, err := a.Srv.Store.Group().PermittedSyncableAdmins(syncableID, syncableType)
+	if err != nil {
+		return err
+	}
+
+	a.Log.Info(
+		fmt.Sprintf("Permitted admins for %s", syncableType),
+		mlog.String(strings.ToLower(fmt.Sprintf("%s_id", syncableType)), syncableID),
+		mlog.Any("permitted_admins", permittedAdmins),
+	)
+
+	var updateFunc func(string, []string, store.Equality, bool) *model.AppError
+
+	switch syncableType {
+	case model.GroupSyncableTypeTeam:
+		updateFunc = a.Srv.Store.Team().UpdateMembersRole
+	case model.GroupSyncableTypeChannel:
+		updateFunc = a.Srv.Store.Channel().UpdateMembersRole
+	default:
+		return model.NewAppError("App.SyncSyncableRoles", "groups.unsupported_syncable_type", map[string]interface{}{"Value": syncableType}, "", http.StatusInternalServerError)
+	}
+
+	err = updateFunc(syncableID, permittedAdmins, store.Equals, true)
+	if err != nil {
+		return err
+	}
+
+	err = updateFunc(syncableID, permittedAdmins, store.NotEquals, false)
+	if err != nil {
+		return err
 	}
 
 	return nil
