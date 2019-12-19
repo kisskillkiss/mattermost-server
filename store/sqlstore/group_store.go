@@ -723,7 +723,6 @@ func groupSyncableToGroupChannel(groupSyncable *model.GroupSyncable) *groupChann
 	}
 }
 
-// TeamMembersToRemove returns all team members that should be removed based on group constraints.
 func (s *SqlGroupStore) TeamMembersToRemove(teamID *string) ([]*model.TeamMember, *model.AppError) {
 	var teamScope string
 
@@ -818,7 +817,6 @@ func (s *SqlGroupStore) GetGroupsByChannel(channelId string, opts model.GroupSea
 	return groups, nil
 }
 
-// ChannelMembersToRemove returns all channel members that should be removed based on group constraints.
 func (s *SqlGroupStore) ChannelMembersToRemove(channelID *string) ([]*model.ChannelMember, *model.AppError) {
 	var channelScope string
 

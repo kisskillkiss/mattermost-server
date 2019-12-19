@@ -621,7 +621,10 @@ type GroupStore interface {
 	// Typically since will be the last successful group sync time.
 	ChannelMembersToAdd(since int64, channelID *string) ([]*model.UserChannelIDPair, *model.AppError)
 
+	// TeamMembersToRemove returns all team members that should be removed based on group constraints.
 	TeamMembersToRemove(teamID *string) ([]*model.TeamMember, *model.AppError)
+
+	// ChannelMembersToRemove returns all channel members that should be removed based on group constraints.
 	ChannelMembersToRemove(channelID *string) ([]*model.ChannelMember, *model.AppError)
 
 	GetGroupsByChannel(channelId string, opts model.GroupSearchOpts) ([]*model.Group, *model.AppError)
