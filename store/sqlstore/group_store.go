@@ -724,8 +724,14 @@ func groupSyncableToGroupChannel(groupSyncable *model.GroupSyncable) *groupChann
 }
 
 // TeamMembersToRemove returns all team members that should be removed based on group constraints.
-func (s *SqlGroupStore) TeamMembersToRemove() ([]*model.TeamMember, *model.AppError) {
-	sql := `
+func (s *SqlGroupStore) TeamMembersToRemove(teamID *string) ([]*model.TeamMember, *model.AppError) {
+	var teamScope string
+
+	if teamID != nil {
+		teamScope = fmt.Sprintf("AND TeamsMembers.TeamId = '%s'", *teamID)
+	}
+
+	sql := fmt.Sprintf(`
 		SELECT
 			TeamMembers.TeamId,
 			TeamMembers.UserId,
@@ -744,6 +750,7 @@ func (s *SqlGroupStore) TeamMembersToRemove() ([]*model.TeamMember, *model.AppEr
 			AND Teams.GroupConstrained = TRUE
 			AND Bots.UserId IS NULL
 			AND (TeamMembers.TeamId, TeamMembers.UserId)
+			%s
 			NOT IN (
 				SELECT
 					Teams.Id AS TeamId, GroupMembers.UserId
@@ -760,7 +767,7 @@ func (s *SqlGroupStore) TeamMembersToRemove() ([]*model.TeamMember, *model.AppEr
 					AND GroupMembers.DeleteAt = 0
 				GROUP BY
 					Teams.Id,
-					GroupMembers.UserId)`
+					GroupMembers.UserId)`, teamScope)
 
 	var teamMembers []*model.TeamMember
 
@@ -812,8 +819,14 @@ func (s *SqlGroupStore) GetGroupsByChannel(channelId string, opts model.GroupSea
 }
 
 // ChannelMembersToRemove returns all channel members that should be removed based on group constraints.
-func (s *SqlGroupStore) ChannelMembersToRemove() ([]*model.ChannelMember, *model.AppError) {
-	sql := `
+func (s *SqlGroupStore) ChannelMembersToRemove(channelID *string) ([]*model.ChannelMember, *model.AppError) {
+	var channelScope string
+
+	if channelID != nil {
+		channelScope = fmt.Sprintf("AND ChannelMembers.ChannelId = '%s'", *channelID)
+	}
+
+	sql := fmt.Sprintf(`
 		SELECT
 			ChannelMembers.ChannelId,
 			ChannelMembers.UserId,
@@ -835,6 +848,7 @@ func (s *SqlGroupStore) ChannelMembersToRemove() ([]*model.ChannelMember, *model
 			AND Channels.GroupConstrained = TRUE
 			AND Bots.UserId IS NULL
 			AND (ChannelMembers.ChannelId, ChannelMembers.UserId)
+			%s
 			NOT IN (
 				SELECT
 					Channels.Id AS ChannelId, GroupMembers.UserId
@@ -851,7 +865,7 @@ func (s *SqlGroupStore) ChannelMembersToRemove() ([]*model.ChannelMember, *model
 					AND GroupMembers.DeleteAt = 0
 				GROUP BY
 					Channels.Id,
-					GroupMembers.UserId)`
+					GroupMembers.UserId)`, channelScope)
 
 	var channelMembers []*model.ChannelMember
 

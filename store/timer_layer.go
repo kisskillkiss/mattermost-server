@@ -2600,10 +2600,10 @@ func (s *TimerLayerGroupStore) ChannelMembersToAdd(since int64, channelID *strin
 	return resultVar0, resultVar1
 }
 
-func (s *TimerLayerGroupStore) ChannelMembersToRemove() ([]*model.ChannelMember, *model.AppError) {
+func (s *TimerLayerGroupStore) ChannelMembersToRemove(channelID *string) ([]*model.ChannelMember, *model.AppError) {
 	start := timemodule.Now()
 
-	resultVar0, resultVar1 := s.GroupStore.ChannelMembersToRemove()
+	resultVar0, resultVar1 := s.GroupStore.ChannelMembersToRemove(channelID)
 
 	elapsed := float64(timemodule.Since(start)) / float64(timemodule.Second)
 	if s.Root.Metrics != nil {
@@ -3048,10 +3048,10 @@ func (s *TimerLayerGroupStore) TeamMembersToAdd(since int64, teamID *string) ([]
 	return resultVar0, resultVar1
 }
 
-func (s *TimerLayerGroupStore) TeamMembersToRemove() ([]*model.TeamMember, *model.AppError) {
+func (s *TimerLayerGroupStore) TeamMembersToRemove(teamID *string) ([]*model.TeamMember, *model.AppError) {
 	start := timemodule.Now()
 
-	resultVar0, resultVar1 := s.GroupStore.TeamMembersToRemove()
+	resultVar0, resultVar1 := s.GroupStore.TeamMembersToRemove(teamID)
 
 	elapsed := float64(timemodule.Since(start)) / float64(timemodule.Second)
 	if s.Root.Metrics != nil {

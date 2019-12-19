@@ -89,13 +89,13 @@ func (_m *GroupStore) ChannelMembersToAdd(since int64, channelID *string) ([]*mo
 	return r0, r1
 }
 
-// ChannelMembersToRemove provides a mock function with given fields:
-func (_m *GroupStore) ChannelMembersToRemove() ([]*model.ChannelMember, *model.AppError) {
-	ret := _m.Called()
+// ChannelMembersToRemove provides a mock function with given fields: channelID
+func (_m *GroupStore) ChannelMembersToRemove(channelID *string) ([]*model.ChannelMember, *model.AppError) {
+	ret := _m.Called(channelID)
 
 	var r0 []*model.ChannelMember
-	if rf, ok := ret.Get(0).(func() []*model.ChannelMember); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(*string) []*model.ChannelMember); ok {
+		r0 = rf(channelID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.ChannelMember)
@@ -103,8 +103,8 @@ func (_m *GroupStore) ChannelMembersToRemove() ([]*model.ChannelMember, *model.A
 	}
 
 	var r1 *model.AppError
-	if rf, ok := ret.Get(1).(func() *model.AppError); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(*string) *model.AppError); ok {
+		r1 = rf(channelID)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*model.AppError)
@@ -770,13 +770,13 @@ func (_m *GroupStore) TeamMembersToAdd(since int64, teamID *string) ([]*model.Us
 	return r0, r1
 }
 
-// TeamMembersToRemove provides a mock function with given fields:
-func (_m *GroupStore) TeamMembersToRemove() ([]*model.TeamMember, *model.AppError) {
-	ret := _m.Called()
+// TeamMembersToRemove provides a mock function with given fields: teamID
+func (_m *GroupStore) TeamMembersToRemove(teamID *string) ([]*model.TeamMember, *model.AppError) {
+	ret := _m.Called(teamID)
 
 	var r0 []*model.TeamMember
-	if rf, ok := ret.Get(0).(func() []*model.TeamMember); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(*string) []*model.TeamMember); ok {
+		r0 = rf(teamID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.TeamMember)
@@ -784,8 +784,8 @@ func (_m *GroupStore) TeamMembersToRemove() ([]*model.TeamMember, *model.AppErro
 	}
 
 	var r1 *model.AppError
-	if rf, ok := ret.Get(1).(func() *model.AppError); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(*string) *model.AppError); ok {
+		r1 = rf(teamID)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*model.AppError)

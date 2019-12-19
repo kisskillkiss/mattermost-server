@@ -621,8 +621,8 @@ type GroupStore interface {
 	// Typically since will be the last successful group sync time.
 	ChannelMembersToAdd(since int64, channelID *string) ([]*model.UserChannelIDPair, *model.AppError)
 
-	TeamMembersToRemove() ([]*model.TeamMember, *model.AppError)
-	ChannelMembersToRemove() ([]*model.ChannelMember, *model.AppError)
+	TeamMembersToRemove(teamID *string) ([]*model.TeamMember, *model.AppError)
+	ChannelMembersToRemove(channelID *string) ([]*model.ChannelMember, *model.AppError)
 
 	GetGroupsByChannel(channelId string, opts model.GroupSearchOpts) ([]*model.Group, *model.AppError)
 	CountGroupsByChannel(channelId string, opts model.GroupSearchOpts) (int64, *model.AppError)

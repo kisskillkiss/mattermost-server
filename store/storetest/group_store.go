@@ -1403,7 +1403,7 @@ func testTeamMemberRemovals(t *testing.T, ss store.Store) {
 	data := pendingMemberRemovalsDataSetup(t, ss)
 
 	// one result when both users are in the group (for user C)
-	teamMembers, err := ss.Group().TeamMembersToRemove()
+	teamMembers, err := ss.Group().TeamMembersToRemove(nil)
 	require.Nil(t, err)
 	require.Len(t, teamMembers, 1)
 	require.Equal(t, data.UserC.Id, teamMembers[0].UserId)
@@ -1412,7 +1412,7 @@ func testTeamMemberRemovals(t *testing.T, ss store.Store) {
 	require.Nil(t, err)
 
 	// user b and c should now be returned
-	teamMembers, err = ss.Group().TeamMembersToRemove()
+	teamMembers, err = ss.Group().TeamMembersToRemove(nil)
 	require.Nil(t, err)
 	require.Len(t, teamMembers, 2)
 
@@ -1428,12 +1428,12 @@ func testTeamMemberRemovals(t *testing.T, ss store.Store) {
 	_, err = ss.Group().DeleteMember(data.Group.Id, data.UserA.Id)
 	require.Nil(t, err)
 
-	teamMembers, err = ss.Group().TeamMembersToRemove()
+	teamMembers, err = ss.Group().TeamMembersToRemove(nil)
 	require.Nil(t, err)
 	require.Len(t, teamMembers, 3)
 
 	// Make one of them a bot
-	teamMembers, err = ss.Group().TeamMembersToRemove()
+	teamMembers, err = ss.Group().TeamMembersToRemove(nil)
 	require.Nil(t, err)
 	teamMember := teamMembers[0]
 	bot := &model.Bot{
@@ -1446,7 +1446,7 @@ func testTeamMemberRemovals(t *testing.T, ss store.Store) {
 	require.Nil(t, err)
 
 	// verify that bot is not returned in results
-	teamMembers, err = ss.Group().TeamMembersToRemove()
+	teamMembers, err = ss.Group().TeamMembersToRemove(nil)
 	require.Nil(t, err)
 	require.Len(t, teamMembers, 2)
 
@@ -1455,7 +1455,7 @@ func testTeamMemberRemovals(t *testing.T, ss store.Store) {
 	require.Nil(t, err)
 
 	// Should be back to 3 users
-	teamMembers, err = ss.Group().TeamMembersToRemove()
+	teamMembers, err = ss.Group().TeamMembersToRemove(nil)
 	require.Nil(t, err)
 	require.Len(t, teamMembers, 3)
 
@@ -1478,7 +1478,7 @@ func testChannelMemberRemovals(t *testing.T, ss store.Store) {
 	data := pendingMemberRemovalsDataSetup(t, ss)
 
 	// one result when both users are in the group (for user C)
-	channelMembers, err := ss.Group().ChannelMembersToRemove()
+	channelMembers, err := ss.Group().ChannelMembersToRemove(nil)
 	require.Nil(t, err)
 	require.Len(t, channelMembers, 1)
 	require.Equal(t, data.UserC.Id, channelMembers[0].UserId)
@@ -1487,7 +1487,7 @@ func testChannelMemberRemovals(t *testing.T, ss store.Store) {
 	require.Nil(t, err)
 
 	// user b and c should now be returned
-	channelMembers, err = ss.Group().ChannelMembersToRemove()
+	channelMembers, err = ss.Group().ChannelMembersToRemove(nil)
 	require.Nil(t, err)
 	require.Len(t, channelMembers, 2)
 
@@ -1503,12 +1503,12 @@ func testChannelMemberRemovals(t *testing.T, ss store.Store) {
 	_, err = ss.Group().DeleteMember(data.Group.Id, data.UserA.Id)
 	require.Nil(t, err)
 
-	channelMembers, err = ss.Group().ChannelMembersToRemove()
+	channelMembers, err = ss.Group().ChannelMembersToRemove(nil)
 	require.Nil(t, err)
 	require.Len(t, channelMembers, 3)
 
 	// Make one of them a bot
-	channelMembers, err = ss.Group().ChannelMembersToRemove()
+	channelMembers, err = ss.Group().ChannelMembersToRemove(nil)
 	require.Nil(t, err)
 	channelMember := channelMembers[0]
 	bot := &model.Bot{
@@ -1521,7 +1521,7 @@ func testChannelMemberRemovals(t *testing.T, ss store.Store) {
 	require.Nil(t, err)
 
 	// verify that bot is not returned in results
-	channelMembers, err = ss.Group().ChannelMembersToRemove()
+	channelMembers, err = ss.Group().ChannelMembersToRemove(nil)
 	require.Nil(t, err)
 	require.Len(t, channelMembers, 2)
 
@@ -1530,7 +1530,7 @@ func testChannelMemberRemovals(t *testing.T, ss store.Store) {
 	require.Nil(t, err)
 
 	// Should be back to 3 users
-	channelMembers, err = ss.Group().ChannelMembersToRemove()
+	channelMembers, err = ss.Group().ChannelMembersToRemove(nil)
 	require.Nil(t, err)
 	require.Len(t, channelMembers, 3)
 

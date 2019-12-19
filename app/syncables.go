@@ -15,7 +15,7 @@ import (
 
 // CreateDefaultChannelMemberships adds users to channels based on their group memberships and how those groups are
 // configured to sync with channels for group members on or after the given timestamp. If a channelID is given
-// only that channel's members are created.
+// only that channel's members are created. If channelID is nil all channel memberships are created.
 func (a *App) CreateDefaultChannelMemberships(since int64, channelID *string) error {
 	channelMembers, appErr := a.ChannelMembersToAdd(since, channelID)
 	if appErr != nil {
@@ -68,7 +68,7 @@ func (a *App) CreateDefaultChannelMemberships(since int64, channelID *string) er
 
 // CreateDefaultTeamMemberships adds users to teams based on their group memberships and how those groups are
 // configured to sync with teams for group members on or after the given timestamp. If a teamID is given
-// only that team's members are created.
+// only that team's members are created. If teamID is nil all team memberships are created.
 func (a *App) CreateDefaultTeamMemberships(since int64, teamID *string) error {
 	teamMembers, appErr := a.TeamMembersToAdd(since, teamID)
 	if appErr != nil {
@@ -90,8 +90,8 @@ func (a *App) CreateDefaultTeamMemberships(since int64, teamID *string) error {
 	return nil
 }
 
-// CreateDefaultMemberships adds users to teams and channels based on their group memberships and how those groups are
-// configured to sync with teams and channels for group members on or after the given timestamp.
+// CreateDefaultMemberships adds users to teams and channels based on their group memberships and how those groups
+// are configured to sync with teams and channels for group members on or after the given timestamp.
 func (a *App) CreateDefaultMemberships(since int64) error {
 	err := a.CreateDefaultTeamMemberships(since, nil)
 	if err != nil {
@@ -122,17 +122,16 @@ func (a *App) DeleteGroupConstrainedMemberships() error {
 	return nil
 }
 
+// DeleteGroupConstrainedTeamMemberships deletes team memberships of users who aren't members of the allowed
+// groups of the given group-constrained team. If a teamID is given then the procedure is scoped to the given team,
+// if teamID is nil then the proceedure affects all teams.
 func (a *App) DeleteGroupConstrainedTeamMemberships(teamID *string) error {
-	teamMembers, appErr := a.TeamMembersToRemove()
+	teamMembers, appErr := a.TeamMembersToRemove(teamID)
 	if appErr != nil {
 		return appErr
 	}
 
 	for _, userTeam := range teamMembers {
-		if teamID != nil && userTeam.TeamId != *teamID {
-			continue
-		}
-
 		err := a.RemoveUserFromTeam(userTeam.TeamId, userTeam.UserId, "")
 		if err != nil {
 			return err
@@ -142,26 +141,21 @@ func (a *App) DeleteGroupConstrainedTeamMemberships(teamID *string) error {
 			mlog.String("user_id", userTeam.UserId),
 			mlog.String("team_id", userTeam.TeamId),
 		)
-
-		if teamID != nil && userTeam.TeamId == *teamID {
-			break
-		}
 	}
 
 	return nil
 }
 
+// DeleteGroupConstrainedChannelMemberships deletes channel memberships of users who aren't members of the allowed
+// groups of the given group-constrained channel. If a channelID is given then the procedure is scoped to the given team,
+// if channelID is nil then the proceedure affects all teams.
 func (a *App) DeleteGroupConstrainedChannelMemberships(channelID *string) error {
-	channelMembers, appErr := a.ChannelMembersToRemove()
+	channelMembers, appErr := a.ChannelMembersToRemove(channelID)
 	if appErr != nil {
 		return appErr
 	}
 
 	for _, userChannel := range channelMembers {
-		if channelID != nil && userChannel.ChannelId != *channelID {
-			continue
-		}
-
 		channel, err := a.GetChannel(userChannel.ChannelId)
 		if err != nil {
 			return err
@@ -176,10 +170,6 @@ func (a *App) DeleteGroupConstrainedChannelMemberships(channelID *string) error 
 			mlog.String("user_id", userChannel.UserId),
 			mlog.String("channel_id", channel.Id),
 		)
-
-		if channelID != nil && userChannel.ChannelId == *channelID {
-			break
-		}
 	}
 
 	return nil
@@ -224,6 +214,8 @@ func (a *App) SyncSyncableRoles(syncableID string, syncableType model.GroupSynca
 	return nil
 }
 
+// SyncRolesAndMembership updates the SchemeAdmin status and membership of all of the members of the given
+// syncable.
 func (a *App) SyncRolesAndMembership(syncableID string, syncableType model.GroupSyncableType) {
 	a.SyncSyncableRoles(syncableID, syncableType)
 
