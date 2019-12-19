@@ -192,10 +192,7 @@ func linkGroupSyncable(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go func() {
-		c.App.SyncSyncableRoles(syncableID, syncableType)
-		// TODO: Trigger membership sync.
-	}()
+	go c.App.SyncRolesAndMembership(syncableID, syncableType)
 
 	w.WriteHeader(http.StatusCreated)
 
@@ -344,10 +341,7 @@ func patchGroupSyncable(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go func() {
-		c.App.SyncSyncableRoles(syncableID, syncableType)
-		// TODO: Trigger membership sync.
-	}()
+	go c.App.SyncRolesAndMembership(syncableID, syncableType)
 
 	b, marshalErr := json.Marshal(groupSyncable)
 	if marshalErr != nil {
@@ -393,10 +387,7 @@ func unlinkGroupSyncable(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go func() {
-		c.App.SyncSyncableRoles(syncableID, syncableType)
-		// TODO: Trigger membership sync.
-	}()
+	go c.App.SyncRolesAndMembership(syncableID, syncableType)
 
 	ReturnStatusOK(w)
 }

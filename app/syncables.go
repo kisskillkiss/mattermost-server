@@ -13,27 +13,11 @@ import (
 	"github.com/mattermost/mattermost-server/v5/store"
 )
 
-// CreateDefaultMemberships adds users to teams and channels based on their group memberships and how those groups are
-// configured to sync with teams and channels for group members on or after the given timestamp.
-func (a *App) CreateDefaultMemberships(since int64) error {
-	teamMembers, appErr := a.TeamMembersToAdd(since)
-	if appErr != nil {
-		return appErr
-	}
-
-	for _, userTeam := range teamMembers {
-		_, err := a.AddTeamMember(userTeam.TeamID, userTeam.UserID)
-		if err != nil {
-			return err
-		}
-
-		a.Log.Info("added teammember",
-			mlog.String("user_id", userTeam.UserID),
-			mlog.String("team_id", userTeam.TeamID),
-		)
-	}
-
-	channelMembers, appErr := a.ChannelMembersToAdd(since)
+// CreateDefaultChannelMemberships adds users to channels based on their group memberships and how those groups are
+// configured to sync with channels for group members on or after the given timestamp. If a channelID is given
+// only that channel's members are created.
+func (a *App) CreateDefaultChannelMemberships(since int64, channelID *string) error {
+	channelMembers, appErr := a.ChannelMembersToAdd(since, channelID)
 	if appErr != nil {
 		return appErr
 	}
@@ -82,15 +66,102 @@ func (a *App) CreateDefaultMemberships(since int64) error {
 	return nil
 }
 
+// CreateDefaultTeamMemberships adds users to teams based on their group memberships and how those groups are
+// configured to sync with teams for group members on or after the given timestamp. If a teamID is given
+// only that team's members are created.
+func (a *App) CreateDefaultTeamMemberships(since int64, teamID *string) error {
+	teamMembers, appErr := a.TeamMembersToAdd(since, teamID)
+	if appErr != nil {
+		return appErr
+	}
+
+	for _, userTeam := range teamMembers {
+		_, err := a.AddTeamMember(userTeam.TeamID, userTeam.UserID)
+		if err != nil {
+			return err
+		}
+
+		a.Log.Info("added teammember",
+			mlog.String("user_id", userTeam.UserID),
+			mlog.String("team_id", userTeam.TeamID),
+		)
+	}
+
+	return nil
+}
+
+// CreateDefaultMemberships adds users to teams and channels based on their group memberships and how those groups are
+// configured to sync with teams and channels for group members on or after the given timestamp.
+func (a *App) CreateDefaultMemberships(since int64) error {
+	err := a.CreateDefaultTeamMemberships(since, nil)
+	if err != nil {
+		return err
+	}
+
+	err = a.CreateDefaultChannelMemberships(since, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // DeleteGroupConstrainedMemberships deletes team and channel memberships of users who aren't members of the allowed
 // groups of all group-constrained teams and channels.
 func (a *App) DeleteGroupConstrainedMemberships() error {
+	err := a.DeleteGroupConstrainedChannelMemberships(nil)
+	if err != nil {
+		return err
+	}
+
+	err = a.DeleteGroupConstrainedTeamMemberships(nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *App) DeleteGroupConstrainedTeamMemberships(teamID *string) error {
+	teamMembers, appErr := a.TeamMembersToRemove()
+	if appErr != nil {
+		return appErr
+	}
+
+	for _, userTeam := range teamMembers {
+		if teamID != nil && userTeam.TeamId != *teamID {
+			continue
+		}
+
+		err := a.RemoveUserFromTeam(userTeam.TeamId, userTeam.UserId, "")
+		if err != nil {
+			return err
+		}
+
+		a.Log.Info("removed teammember",
+			mlog.String("user_id", userTeam.UserId),
+			mlog.String("team_id", userTeam.TeamId),
+		)
+
+		if teamID != nil && userTeam.TeamId == *teamID {
+			break
+		}
+	}
+
+	return nil
+}
+
+func (a *App) DeleteGroupConstrainedChannelMemberships(channelID *string) error {
 	channelMembers, appErr := a.ChannelMembersToRemove()
 	if appErr != nil {
 		return appErr
 	}
 
 	for _, userChannel := range channelMembers {
+		if channelID != nil && userChannel.ChannelId != *channelID {
+			continue
+		}
+
 		channel, err := a.GetChannel(userChannel.ChannelId)
 		if err != nil {
 			return err
@@ -105,30 +176,18 @@ func (a *App) DeleteGroupConstrainedMemberships() error {
 			mlog.String("user_id", userChannel.UserId),
 			mlog.String("channel_id", channel.Id),
 		)
-	}
 
-	teamMembers, appErr := a.TeamMembersToRemove()
-	if appErr != nil {
-		return appErr
-	}
-
-	for _, userTeam := range teamMembers {
-		err := a.RemoveUserFromTeam(userTeam.TeamId, userTeam.UserId, "")
-		if err != nil {
-			return err
+		if channelID != nil && userChannel.ChannelId == *channelID {
+			break
 		}
-
-		a.Log.Info("removed teammember",
-			mlog.String("user_id", userTeam.UserId),
-			mlog.String("team_id", userTeam.TeamId),
-		)
 	}
 
 	return nil
 }
 
 // SyncSyncableRoles updates the SchemeAdmin field value of the given syncable's members based on the configuration of
-// the member's group memberships and the configuration of those groups to the syncable.
+// the member's group memberships and the configuration of those groups to the syncable. This method should only
+// be invoked on group-synced (aka group-constrained) syncables.
 func (a *App) SyncSyncableRoles(syncableID string, syncableType model.GroupSyncableType) *model.AppError {
 	permittedAdmins, err := a.Srv.Store.Group().PermittedSyncableAdmins(syncableID, syncableType)
 	if err != nil {
@@ -163,4 +222,20 @@ func (a *App) SyncSyncableRoles(syncableID string, syncableType model.GroupSynca
 	}
 
 	return nil
+}
+
+func (a *App) SyncRolesAndMembership(syncableID string, syncableType model.GroupSyncableType) {
+	a.SyncSyncableRoles(syncableID, syncableType)
+
+	lastJob, _ := a.Srv.Store.Job().GetNewestJobByStatusAndType(model.JOB_STATUS_SUCCESS, model.JOB_TYPE_LDAP_SYNC)
+
+	switch syncableType {
+	case model.GroupSyncableTypeTeam:
+		a.CreateDefaultTeamMemberships(lastJob.StartAt, &syncableID)
+		a.DeleteGroupConstrainedTeamMemberships(&syncableID)
+	case model.GroupSyncableTypeChannel:
+		a.CreateDefaultChannelMemberships(lastJob.StartAt, &syncableID)
+		a.DeleteGroupConstrainedChannelMemberships(&syncableID)
+	default:
+	}
 }

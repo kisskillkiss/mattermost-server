@@ -152,12 +152,12 @@ func (a *App) DeleteGroupSyncable(groupID string, syncableID string, syncableTyp
 	return gs, nil
 }
 
-func (a *App) TeamMembersToAdd(since int64) ([]*model.UserTeamIDPair, *model.AppError) {
-	return a.Srv.Store.Group().TeamMembersToAdd(since)
+func (a *App) TeamMembersToAdd(since int64, teamID *string) ([]*model.UserTeamIDPair, *model.AppError) {
+	return a.Srv.Store.Group().TeamMembersToAdd(since, teamID)
 }
 
-func (a *App) ChannelMembersToAdd(since int64) ([]*model.UserChannelIDPair, *model.AppError) {
-	return a.Srv.Store.Group().ChannelMembersToAdd(since)
+func (a *App) ChannelMembersToAdd(since int64, channelID *string) ([]*model.UserChannelIDPair, *model.AppError) {
+	return a.Srv.Store.Group().ChannelMembersToAdd(since, channelID)
 }
 
 func (a *App) TeamMembersToRemove() ([]*model.TeamMember, *model.AppError) {

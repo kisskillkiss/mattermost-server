@@ -633,11 +633,7 @@ func (s *SqlGroupStore) DeleteGroupSyncable(groupID string, syncableID string, s
 	return groupSyncable, nil
 }
 
-// TeamMembersToAdd returns a slice of UserTeamIDPair that need newly created memberships
-// based on the groups configurations.
-//
-// Typically since will be the last successful group sync time.
-func (s *SqlGroupStore) TeamMembersToAdd(since int64) ([]*model.UserTeamIDPair, *model.AppError) {
+func (s *SqlGroupStore) TeamMembersToAdd(since int64, teamID *string) ([]*model.UserTeamIDPair, *model.AppError) {
 	sql := `
 		SELECT
 			GroupMembers.UserId, GroupTeams.TeamId
@@ -661,6 +657,10 @@ func (s *SqlGroupStore) TeamMembersToAdd(since int64) ([]*model.UserTeamIDPair, 
 			AND (GroupMembers.CreateAt >= :Since
 			OR GroupTeams.UpdateAt >= :Since)`
 
+	if teamID != nil {
+		sql = fmt.Sprintf("%s AND Teams.Id = %s", sql, *teamID)
+	}
+
 	var teamMembers []*model.UserTeamIDPair
 
 	_, err := s.GetReplica().Select(&teamMembers, sql, map[string]interface{}{"Since": since})
@@ -671,11 +671,7 @@ func (s *SqlGroupStore) TeamMembersToAdd(since int64) ([]*model.UserTeamIDPair, 
 	return teamMembers, nil
 }
 
-// ChannelMembersToAdd returns a slice of UserChannelIDPair that need newly created memberships
-// based on the groups configurations.
-//
-// Typically since will be the last successful group sync time.
-func (s *SqlGroupStore) ChannelMembersToAdd(since int64) ([]*model.UserChannelIDPair, *model.AppError) {
+func (s *SqlGroupStore) ChannelMembersToAdd(since int64, channelID *string) ([]*model.UserChannelIDPair, *model.AppError) {
 	sql := `
 		SELECT
 			GroupMembers.UserId, GroupChannels.ChannelId
@@ -698,6 +694,10 @@ func (s *SqlGroupStore) ChannelMembersToAdd(since int64) ([]*model.UserChannelID
 			AND Channels.DeleteAt = 0
 			AND (GroupMembers.CreateAt >= :Since
 			OR GroupChannels.UpdateAt >= :Since)`
+
+	if channelID != nil {
+		sql = fmt.Sprintf("%s AND Channels.Id = %s", sql, *channelID)
+	}
 
 	var channelMembers []*model.UserChannelIDPair
 
