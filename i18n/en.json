@@ -4212,7 +4212,7 @@
   },
   {
     "id": "groups.unsupported_syncable_type",
-    "translation": "unsupported syncable type '{{.Value}}'"
+    "translation": "Unsupported syncable type '{{.Value}}'."
   },
   {
     "id": "interactive_message.decode_trigger_id.base64_decode_failed",
