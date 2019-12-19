@@ -220,13 +220,17 @@ func (a *App) SyncRolesAndMembership(syncableID string, syncableType model.Group
 	a.SyncSyncableRoles(syncableID, syncableType)
 
 	lastJob, _ := a.Srv.Store.Job().GetNewestJobByStatusAndType(model.JOB_STATUS_SUCCESS, model.JOB_TYPE_LDAP_SYNC)
+	var since int64
+	if lastJob != nil {
+		since = lastJob.StartAt
+	}
 
 	switch syncableType {
 	case model.GroupSyncableTypeTeam:
-		a.CreateDefaultTeamMemberships(lastJob.StartAt, &syncableID)
+		a.CreateDefaultTeamMemberships(since, &syncableID)
 		a.DeleteGroupConstrainedTeamMemberships(&syncableID)
 	case model.GroupSyncableTypeChannel:
-		a.CreateDefaultChannelMemberships(lastJob.StartAt, &syncableID)
+		a.CreateDefaultChannelMemberships(since, &syncableID)
 		a.DeleteGroupConstrainedChannelMemberships(&syncableID)
 	default:
 	}
